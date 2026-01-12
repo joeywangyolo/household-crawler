@@ -1,0 +1,234 @@
+
+
+
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="UTF-8" />
+    <title>村里街路門牌查詢</title>
+    <meta content="no-cache" http-equiv="Cache-Control" />
+    <meta content="no-cache" http-equiv="Pragma" />
+    <meta content="0" http-equiv="Expires" />
+    <meta content="webapply" http-equiv="keywords" />
+
+    <meta name="DC.Title" content="村里街路門牌查詢" />
+    <meta name="DC.Creator" content="內政部戶政司" />
+    <meta name="DC.Publisher" content="內政部戶政司" />
+    <meta name="DC.Source" content="內政部戶政司" />
+    <meta name="DC.Type" content="text/html" />
+    <meta name="DC.Format" content="text/html" />
+    <meta name="DC.Language" content="繁體中文" />
+    <meta name="DC.Rights" content="內政部戶政司" />
+    <meta name="DC.Description" content="內政部戶政司全球資訊網" />
+    
+
+    <!-- secure information for MOICA validation rule -->
+    <meta name="app.secure" content="normal" />
+
+    <!-- default header name is X-CSRF-TOKEN -->
+    <meta name="_csrf" content="74eeb05b-2e60-4d92-b48b-35e4109f5141"/>
+    <meta name="_csrf_header" content="X-CSRF-TOKEN"/>
+
+    <!-- icon & css recources -->
+    
+
+
+
+
+ <!-- /3.5.1 -->
+<script type="text/javascript" src="/info-doorplate/webjars/jquery/jquery.min.js"></script>
+
+
+
+<script type="text/javascript" src="/info-doorplate/assets/bootstrap/js/bootstrap.min.js"></script>
+<link rel="stylesheet" type="text/css" href="/info-doorplate/webjars/bootstrap-icons/font/bootstrap-icons.min.css" /> <!-- /1.11.0 -->
+<link rel="stylesheet" type="text/css" href="/info-doorplate/assets/bootstrap/css/bootstrap.min.css" />
+
+
+<script type="text/javascript" src="/info-doorplate/assets/jquery-ui/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="/info-doorplate/assets/jquery-ui/jquery-ui.min.css" type="text/css" />
+
+
+<script type="text/javascript" src="/info-doorplate/webjars/github-com-macek-jquery-serialize-object/dist/jquery.serialize-object.min.js" defer></script> <!-- /2.5.0 -->
+
+<script type="text/javascript" src="/info-doorplate/webjars/mobile-detect/mobile-detect.min.js"></script> <!-- /1.3.6 -->
+
+<script src="/info-doorplate/plugins/promise-polyfill/polyfill.min.js" defer></script>
+
+<link rel="stylesheet" type="text/css" href="/info-doorplate/plugins/sweetalert2/sweetalert2.min.css" />
+<script src="/info-doorplate/plugins/sweetalert2/sweetalert2.all.min.js" defer></script>
+
+<link rel="stylesheet" type="text/css" href="/info-doorplate/plugins/jquery-confirm/jquery-confirm.min.css" />
+<script src="/info-doorplate/plugins/jquery-confirm/jquery-confirm.min.js" defer></script>
+
+
+<link rel="Shortcut Icon" href="/info-doorplate/global/images/classic/favicon.ico" />
+<link rel="stylesheet" href="/info-doorplate/global/css/webapply.css" type="text/css" />
+<link rel="stylesheet" href="/info-doorplate/global/css/aw3.form.css" type="text/css" />
+<script type="text/javascript" src="/info-doorplate/global/js/aw3.polyfill.js"></script>
+<script type="text/javascript" src="/info-doorplate/global/js/awUtils.js"></script>
+<script type="text/javascript" src="/info-doorplate/global/js/errorcode.js"></script>
+<script type="text/javascript" src="/info-doorplate/global/js/validator.js"></script>
+<script type="text/javascript" src="/info-doorplate/global/js/aw3-global.Utils.js"></script>
+<script type="text/javascript" src="/info-doorplate/global/js/aw3.font.js"></script>
+
+
+<script src="/info-doorplate/plugins/jsviews/jsviews.min.js" defer></script>
+
+
+
+<script type="text/javascript" src="/info-doorplate/webjars/owasp-esapi-js/dist/esapi.js"></script>
+<script type="text/javascript" src="/info-doorplate/webjars/owasp-esapi-js/dist/resources/i18n/ESAPI_Standard_en_US.properties.js"></script>
+<script type="text/javascript" src="/info-doorplate/webjars/owasp-esapi-js/dist/resources/Base.esapi.properties.js"></script>
+<script type="text/javascript">
+$(function () {
+	org.owasp.esapi.ESAPI.initialize();
+});
+ </script>
+
+    <!-- javeScript recources -->
+    
+
+
+
+
+
+
+    <!-- javeScript -->
+    
+
+</head>
+
+<!-- style="margin: .8em; padding: .8em;" -->
+
+<body style="height: 100%">
+	<div class="container" style="padding: 6px; min-height: 300px;">
+		<div></div>
+		<div>
+
+
+
+
+<div id="messageTitle" style="text-align: center;">
+    
+    
+</div></div>
+		<div>
+
+
+
+</div>
+		<div>
+
+
+
+
+<style>
+.subtitle-header { margin: 0; display: block; padding-left: 46px; padding-top: 1.2em; background: transparent url('/info-doorplate/resources/images/doorplate/door.png') no-repeat; }
+.rotate-y { -webkit-transform: rotate(90deg); -moz-transform: rotate(90deg); -ms-transform: rotate(90deg); -o-transform: rotate(90deg); transform: rotate(90deg); }
+</style>
+
+
+
+<div class="container">
+	<div class="col-xs-12">
+		<div class="form-heading">
+			<h1>村里街路門牌查詢</h1>
+		</div>
+		<form id="command" class="form-horizontal" action="/info-doorplate/app/doorplate/map" method="post">
+			
+			<div class="form-group-odd">
+				<div class="col-xs-12">
+					<div class="col-xs-12">
+					<div class="alert alert-info m-0-bottom">
+						<span class="glyphicon glyphicon-info-sign color-blue fs12"></span>
+						<span class="color-red strong">門牌業務係屬地方自治事項權責，本網站之資料僅參考用，如有申請門牌編釘、門牌證明等需求，請逕洽該門牌地址之所在地戶政事務所</span>
+					</div>
+					</div>
+				</div>
+				<fieldset>
+					<legend class="col-xs-12">
+						<label class="subtitle-header"><span class="fs11">現有村里街路門牌查詢</span></label>
+					</legend>
+					<div class="col-xs-12 m-md-top">
+						<div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+							<button type="button" class="btn btn-info btn-block ps-classification" title="以編釘日期、編釘類別查詢" data-type="date">
+								<div class="text-center fs13"><span class="glyphicon glyphicon-search rotate-y"></span></div>
+								<hr class="m-sm-y" />
+								<div class="hidden-xs p-sm-y"></div>
+								<div class="text-center fs13 strong">以編釘日期、編釘類別<br class="hidden-lg hidden-md hidden-sm"/>查詢</div>
+								<div class="hidden-xs p-sm-y"></div>
+							</button>
+						</div>
+						<div class="col-xs-12 col-sm-12 hidden-md hidden-lg p-md-y"></div>
+						<div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+							<button type="button" class="btn btn-info text-center btn-block ps-classification" title="以部分街路門牌查詢" data-type="doorplate">
+								<div class="text-center fs13"><span class="glyphicon glyphicon-search rotate-y"></span></div>
+								<hr class="m-sm-y" />
+								<div class="hidden-xs p-sm-y"></div>
+								<div class="text-center fs13 strong">以部分街路門牌查詢</div>
+								<div class="hidden-xs p-sm-y"></div>
+							</button>
+						</div>
+					</div>
+				</fieldset>
+			</div>
+			<div class="form-group-even">
+				<fieldset>
+					<legend class="col-xs-12">
+						<label class="subtitle-header"><span class="fs11">村里街路門牌異動查詢<br class="hidden-sm hidden-md hidden-lg" />（資料起始日期：87年8月1日）</span></label>
+					</legend>
+					<div class="col-xs-12 m-md-top">
+						<div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+							<button type="button" class="btn btn-info btn-block ps-classification" title="以鄉鎮市區、編釘類別查詢" data-type="village">
+								<div class="text-center fs13"><span class="glyphicon glyphicon-search rotate-y"></span></div>
+								<hr class="m-sm-y" />
+								<div class="hidden-xs p-sm-y"></div>
+								<div class="text-center fs13 strong">以鄉鎮市區、編釘類別<br class="hidden-lg hidden-md hidden-sm"/>查詢</div>
+								<div class="hidden-xs p-sm-y"></div>
+							</button>
+						</div>
+						<div class="col-xs-12 col-sm-12 hidden-md hidden-lg p-md-y"></div>
+						<div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+							<button type="button" class="btn btn-info btn-block ps-classification" title="以變更門牌查詢" data-type="change">
+								<div class="text-center fs13"><span class="glyphicon glyphicon-search rotate-y"></span></div>
+								<hr class="m-sm-y" />
+								<div class="hidden-xs p-sm-y"></div>
+								<div class="text-center fs13 strong">以變更門牌查詢</div>
+								<div class="hidden-xs p-sm-y"></div>
+							</button>
+						</div>
+					</div>
+				</fieldset>
+			</div>
+		<div>
+<input type="hidden" name="_csrf" value="74eeb05b-2e60-4d92-b48b-35e4109f5141" />
+</div></form>
+	</div>
+	<script>
+	$(function(){
+		var c=window.BROWSER&&window.BROWSER.device&&!window.BROWSER.device.mobile?{'text-align':'left'}:{};
+		var btns=$("button.ps-classification"),form=$(btns[0]).closest("form");btns.css(c).on("click",function(){var t=$(this).attr("data-type");t&&(btns.prop("disabled",!0),t=String.format('<input type="hidden" name="searchType" value="{0}" />',t),form.append(t).submit())});
+	});
+	</script>
+</div>
+</div>
+		<div></div>
+	</div>
+	
+
+
+
+	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-28221981-1"></script>
+	<script>
+	  window.dataLayer = window.dataLayer || [];
+	  function gtag(){dataLayer.push(arguments);}
+	  gtag('js', new Date());
+
+	  gtag('config', 'UA-28221981-1');
+	</script>
+
+<script type="text/javascript" src="/_Incapsula_Resource?SWJIYLWA=719d34d31c8e3a6e6fffd425f7e032f3&ns=1&cb=1756748119" async></script></body>
+</html>

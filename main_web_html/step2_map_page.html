@@ -1,0 +1,239 @@
+
+
+
+<!DOCTYPE html>
+<html lang="zh-Hant-TW">
+<head>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    <meta charset="UTF-8" />
+    <title>村里街路門牌查詢</title>
+    <meta content="no-cache" http-equiv="Cache-Control" />
+    <meta content="no-cache" http-equiv="Pragma" />
+    <meta content="0" http-equiv="Expires" />
+    <meta content="webapply" http-equiv="keywords" />
+
+    <meta name="DC.Title" content="村里街路門牌查詢" />
+    <meta name="DC.Creator" content="內政部戶政司" />
+    <meta name="DC.Publisher" content="內政部戶政司" />
+    <meta name="DC.Source" content="內政部戶政司" />
+    <meta name="DC.Type" content="text/html" />
+    <meta name="DC.Format" content="text/html" />
+    <meta name="DC.Language" content="繁體中文" />
+    <meta name="DC.Rights" content="內政部戶政司" />
+    <meta name="DC.Description" content="內政部戶政司全球資訊網" />
+    
+
+    <!-- secure information for MOICA validation rule -->
+    <meta name="app.secure" content="normal" />
+
+    <!-- default header name is X-CSRF-TOKEN -->
+    <meta name="_csrf" content="74eeb05b-2e60-4d92-b48b-35e4109f5141"/>
+    <meta name="_csrf_header" content="X-CSRF-TOKEN"/>
+
+    <!-- icon & css recources -->
+    
+
+
+
+
+ <!-- /3.5.1 -->
+<script type="text/javascript" src="/info-doorplate/webjars/jquery/jquery.min.js"></script>
+
+
+
+<script type="text/javascript" src="/info-doorplate/assets/bootstrap/js/bootstrap.min.js"></script>
+<link rel="stylesheet" type="text/css" href="/info-doorplate/webjars/bootstrap-icons/font/bootstrap-icons.min.css" /> <!-- /1.11.0 -->
+<link rel="stylesheet" type="text/css" href="/info-doorplate/assets/bootstrap/css/bootstrap.min.css" />
+
+
+<script type="text/javascript" src="/info-doorplate/assets/jquery-ui/jquery-ui.min.js"></script>
+<link rel="stylesheet" href="/info-doorplate/assets/jquery-ui/jquery-ui.min.css" type="text/css" />
+
+
+<script type="text/javascript" src="/info-doorplate/webjars/github-com-macek-jquery-serialize-object/dist/jquery.serialize-object.min.js" defer></script> <!-- /2.5.0 -->
+
+<script type="text/javascript" src="/info-doorplate/webjars/mobile-detect/mobile-detect.min.js"></script> <!-- /1.3.6 -->
+
+<script src="/info-doorplate/plugins/promise-polyfill/polyfill.min.js" defer></script>
+
+<link rel="stylesheet" type="text/css" href="/info-doorplate/plugins/sweetalert2/sweetalert2.min.css" />
+<script src="/info-doorplate/plugins/sweetalert2/sweetalert2.all.min.js" defer></script>
+
+<link rel="stylesheet" type="text/css" href="/info-doorplate/plugins/jquery-confirm/jquery-confirm.min.css" />
+<script src="/info-doorplate/plugins/jquery-confirm/jquery-confirm.min.js" defer></script>
+
+
+<link rel="Shortcut Icon" href="/info-doorplate/global/images/classic/favicon.ico" />
+<link rel="stylesheet" href="/info-doorplate/global/css/webapply.css" type="text/css" />
+<link rel="stylesheet" href="/info-doorplate/global/css/aw3.form.css" type="text/css" />
+<script type="text/javascript" src="/info-doorplate/global/js/aw3.polyfill.js"></script>
+<script type="text/javascript" src="/info-doorplate/global/js/awUtils.js"></script>
+<script type="text/javascript" src="/info-doorplate/global/js/errorcode.js"></script>
+<script type="text/javascript" src="/info-doorplate/global/js/validator.js"></script>
+<script type="text/javascript" src="/info-doorplate/global/js/aw3-global.Utils.js"></script>
+<script type="text/javascript" src="/info-doorplate/global/js/aw3.font.js"></script>
+
+
+<script src="/info-doorplate/plugins/jsviews/jsviews.min.js" defer></script>
+
+
+
+<script type="text/javascript" src="/info-doorplate/webjars/owasp-esapi-js/dist/esapi.js"></script>
+<script type="text/javascript" src="/info-doorplate/webjars/owasp-esapi-js/dist/resources/i18n/ESAPI_Standard_en_US.properties.js"></script>
+<script type="text/javascript" src="/info-doorplate/webjars/owasp-esapi-js/dist/resources/Base.esapi.properties.js"></script>
+<script type="text/javascript">
+$(function () {
+	org.owasp.esapi.ESAPI.initialize();
+});
+ </script>
+
+    <!-- javeScript recources -->
+    
+
+
+
+
+
+
+    <!-- javeScript -->
+    
+
+</head>
+
+<!-- style="margin: .8em; padding: .8em;" -->
+
+<body style="height: 100%">
+	<div class="container" style="padding: 6px; min-height: 300px;">
+		<div></div>
+		<div>
+
+
+
+
+<div id="messageTitle" style="text-align: center;">
+    
+    
+</div></div>
+		<div>
+
+
+
+</div>
+		<div>
+
+
+
+
+
+
+
+
+<script src="/info-doorplate/global/js/jquery.rwdImageMaps.min.js" charset="UTF-8" type="text/javascript"></script>
+
+<style>
+area {}
+img { display:block; margin:0 auto; }
+.white-separator { border-top:1px solid #fff; }
+.page-heading { display:block; font-size:1.5em; font-weight:bold; color:#184e97; }
+</style>
+<script type="text/javascript">
+$(function(e) {
+	$('img[usemap]').rwdImageMaps();
+	$('area').on('click', function(e){
+		e.preventDefault();
+		aw.loading('open');
+		var area = $(this), id = area.attr('data-id'), form = area.closest('form');
+		// var hcode = $.map({cityCode:id,searchType:'date'}, function(v, k){
+		//	return ['<input type="hidden" name="', k, '" value="', v, '" />'].join('');
+		// }).join('');
+
+		// ajax 到後端後驗證正常後再 submit 確保導頁處理，或是後端直接導頁?
+	    $('#cityCode').val(id);
+		$('#searchType').val('date');
+
+		// form.find('input:hidden').remove();
+		// window.setTimeout(function(){ form.append(hcode).submit(); },300);
+		window.setTimeout(function(){ form.submit(); },300);
+	});
+	$('#gohome').on('click', function(e){
+		e.preventDefault();
+		aw.loading('open');
+		$(this).blur().prop('disabled', true);
+		window.setTimeout(function(){ window.location.replace('/info-doorplate/app/doorplate/main'); },300);
+	});
+});
+</script>
+
+
+
+<div class="container">
+	<div class="col-xs-12">
+		<div id="formTitle" class="form-heading">
+			<h1>村里街路門牌查詢</h1>
+		</div>
+		<form id="mapForm" class="form-horizontal" action="/info-doorplate/app/doorplate/query" method="post">
+			<input id="searchType" name="searchType" type="hidden" value="date"/>
+			<input id="cityCode" name="cityCode" type="hidden" value=""/>
+			
+			<div class="form-group-odd text-center">
+				<fieldset>
+					<div class="col-xs-12 p-lg-y">
+						<div class="col-xs-12 col-sm-4"></div>
+						<div class="col-xs-12 col-sm-4"><span class="fs13 page-heading">請點選欲查詢縣市</span></div>
+						<div class="col-xs-12 col-sm-4 text-right"><button id="gohome" class="btn btn-primary pull-right" type="button">回主頁</button></div>
+					</div>
+					<div class="col-xs-12"><hr class="white-separator" /></div>
+					<div class="col-xs-12">
+						<map name="FPMap0">
+							<area href="/#" data-id="63000000" alt="臺北市村里街路門牌資料" title="查詢臺北市村里街路門牌資料" shape="rect" coords="261, 21, 304, 34"	tabindex="1026">
+							<area href="/#" data-id="68000000" alt="桃園市村里街路門牌資料" title="查詢桃園市村里街路門牌資料" shape="rect" coords="220, 36, 263, 49"	tabindex="1027">
+							<area href="/#" data-id="10004000" alt="新竹縣村里街路門牌資料" title="查詢新竹縣村里街路門牌資料" shape="rect" coords="213, 79, 255, 92"	tabindex="1029">
+							<area href="/#" data-id="10018000" alt="新竹市村里街路門牌資料" title="查詢新竹市村里街路門牌資料" shape="rect" coords="155, 56, 196, 69"	tabindex="1030">
+							<area href="/#" data-id="10005000" alt="苗栗縣村里街路門牌資料" title="查詢苗栗縣村里街路門牌資料" shape="rect" coords="175, 107, 218, 119"  tabindex="1031">
+							<area href="/#" data-id="66000000" alt="臺中市村里街路門牌資料" title="查詢臺中市村里街路門牌資料" shape="rect" coords="150, 142, 193, 154"  tabindex="1033">
+							<area href="/#" data-id="10007000" alt="彰化縣村里街路門牌資料" title="查詢彰化縣村里街路門牌資料" shape="rect" coords="105, 179, 148, 192"  tabindex="1034">
+							<area href="/#" data-id="10009000" alt="雲林縣村里街路門牌資料" title="查詢雲林縣村里街路門牌資料" shape="rect" coords="87, 212, 130, 226"   tabindex="1035">
+							<area href="/#" data-id="10010000" alt="嘉義縣村里街路門牌資料" title="查詢嘉義縣村里街路門牌資料" shape="rect" coords="133, 254, 176, 267"  tabindex="1036">
+							<area href="/#" data-id="10020000" alt="嘉義市村里街路門牌資料" title="查詢嘉義市村里街路門牌資料" shape="rect" coords="80, 241, 122, 255"   tabindex="1037">
+							<area href="/#" data-id="67000000" alt="臺南市村里街路門牌資料" title="查詢臺南市村里街路門牌資料" shape="rect" coords="74, 290, 116, 303"   tabindex="1039">
+							<area href="/#" data-id="64000000" alt="高雄市村里街路門牌資料" title="查詢高雄市村里街路門牌資料" shape="rect" coords="132, 314, 173, 326"  tabindex="1041">
+							<area href="/#" data-id="10013000" alt="屏東縣村里街路門牌資料" title="查詢屏東縣村里街路門牌資料" shape="rect" coords="121, 377, 164, 389"  tabindex="1042">
+							<area href="/#" data-id="10014000" alt="臺東縣村里街路門牌資料" title="查詢臺東縣村里街路門牌資料" shape="rect" coords="195, 316, 239, 329"  tabindex="1048">
+							<area href="/#" data-id="10015000" alt="花蓮縣村里街路門牌資料" title="查詢花蓮縣村里街路門牌資料" shape="rect" coords="246, 191, 290, 217"  tabindex="1047">
+							<area href="/#" data-id="10002000" alt="宜蘭縣村里街路門牌資料" title="查詢宜蘭縣村里街路門牌資料" shape="rect" coords="282, 103, 325, 115"  tabindex="1045">
+							<area href="/#" data-id="65000000" alt="新北市村里街路門牌資料" title="查詢新北市村里街路門牌資料" shape="rect" coords="279, 51, 320, 64"	tabindex="1043">
+							<area href="/#" data-id="10017000" alt="基隆市村里街路門牌資料" title="查詢基隆市村里街路門牌資料" shape="rect" coords="327, 11, 368, 26"	tabindex="1044">
+							<area href="/#" data-id="10008000" alt="南投縣村里街路門牌資料" title="查詢南投縣村里街路門牌資料" shape="rect" coords="170, 188, 222, 230"  tabindex="1046">
+							<area href="/#" data-id="10016000" alt="澎湖縣村里街路門牌資料" title="查詢澎湖縣村里街路門牌資料" shape="rect" coords="10, 211, 56, 227"	tabindex="1025">
+							<area href="/#" data-id="09020000" alt="金門縣村里街路門牌資料" title="查詢金門縣村里街路門牌資料" shape="rect" coords="9, 108, 52, 144"	 tabindex="1024">
+							<area href="/#" data-id="09007000" alt="連江縣村里街路門牌資料" title="查詢連江縣村里街路門牌資料" shape="rect" coords="11, 17, 55, 32"	  tabindex="1023">
+						</map>
+						<div class="p-md-top">
+							<img src="/info-doorplate/resources/images/doorplate/taiwan-all4.png" class="img-responsive center-block" usemap="#FPMap0" alt="臺灣島圖" />
+						</div>
+					</div>
+				</fieldset>
+			</div>
+		<div>
+<input type="hidden" name="_csrf" value="74eeb05b-2e60-4d92-b48b-35e4109f5141" />
+</div></form>
+	</div>
+</div></div>
+		<div></div>
+	</div>
+	
+
+
+
+	<script async src="https://www.googletagmanager.com/gtag/js?id=UA-28221981-1"></script>
+	<script>
+	  window.dataLayer = window.dataLayer || [];
+	  function gtag(){dataLayer.push(arguments);}
+	  gtag('js', new Date());
+
+	  gtag('config', 'UA-28221981-1');
+	</script>
+
+<script type="text/javascript" src="/_Incapsula_Resource?SWJIYLWA=719d34d31c8e3a6e6fffd425f7e032f3&ns=2&cb=960260477" async></script></body>
+</html>
