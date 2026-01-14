@@ -622,8 +622,8 @@ class HouseholdCrawler:
         max_retry = self.MAX_OCR_RETRY
         
         for attempt in range(1, max_retry + 1):
-            # 取得驗證碼
-            captcha_input = self.get_valid_captcha_with_retry(max_retry=3)
+            # 取得驗證碼 (返回 tuple: captcha_string, is_ocr)
+            captcha_input, _ = self.get_valid_captcha_with_retry(max_retry=3)
             
             if not captcha_input:
                 logger.error("無法取得驗證碼")
@@ -640,7 +640,8 @@ class HouseholdCrawler:
             
             if result.success:
                 return result
-            
+
+            logger.info(f'{RED}回傳錯誤: {result.error_message}{RESET}')
             # 如果是驗證碼錯誤，重試
             if "驗證碼" in result.error_message:
                 logger.warning(f"驗證碼錯誤，重試第 {attempt}/{max_retry} 次...")
@@ -663,7 +664,8 @@ class HouseholdCrawler:
         end_date: str,
         register_kind: str = "1",
         db_manager: "DatabaseManager" = None,
-        city_name: str = "台北市",  
+        city_name: str = "台北市",
+        batch_id: int = None,
     ) -> BatchQueryResult:
         """
         批量查詢所有行政區
@@ -677,6 +679,9 @@ class HouseholdCrawler:
             start_date: 起始日期
             end_date: 結束日期
             register_kind: 編釘類別
+            db_manager: 資料庫管理器
+            city_name: 城市名稱
+            batch_id: 批次 ID，用於關聯資料庫記錄
         
         回傳:
             BatchQueryResult 物件，包含所有行政區的查詢結果
@@ -685,26 +690,14 @@ class HouseholdCrawler:
         district_results = {}
         current_token = ""
         is_first_query = True
-        batch_id = None
         
         district_list = list(districts.items())
         total_districts = len(district_list)
         
         logger.info(f"開始批量查詢 {total_districts} 個行政區...")
         logger.info(f"查詢條件: {start_date} ~ {end_date}, 編釘類別: {register_kind}")
-        
-        # 如果有資料庫連線，建立查詢批次記錄
-        if db_manager and db_manager.is_connected():
-            batch_id = db_manager.create_query_batch(
-                city_code=self.city_code,
-                city_name=city_name,
-                start_date=start_date,
-                end_date=end_date,
-                register_kind=register_kind,
-                total_districts=total_districts
-            )
-            if batch_id:
-                logger.info(f"建立資料庫批次記錄: batch_id={batch_id}")
+        if batch_id:
+            logger.info(f"批次 ID: {batch_id}")
         
         for idx, (district_name, area_code) in enumerate(district_list, 1):
             logger.info(f"[{idx}/{total_districts}] 查詢 {district_name} ({area_code})...")
@@ -757,10 +750,10 @@ class HouseholdCrawler:
                         logger.info(f"取得 token，後續查詢不需要驗證碼")
                         
                         # 存入資料庫
-                        if db_manager and batch_id and result.data:
+                        if db_manager and db_manager.is_connected() and batch_id and result.data:
                             db_manager.insert_records(batch_id, city_name, district_name, result.data)
                             db_manager.insert_district_result(
-                                batch_id, area_code, district_name, 
+                                batch_id, city_name, area_code, district_name, 
                                 result.total_count, "success" if result.total_count > 0 else "no_data"
                             )
                         
@@ -813,20 +806,20 @@ class HouseholdCrawler:
                     logger.info(f"{district_name}: 找到 {result.total_count} 筆資料{pages_info}")
                     
                     # 存入資料庫
-                    if db_manager and batch_id and result.data:
-                        db_manager.insert_records(batch_id, city_name, district_name, result.data)  # 寫入門牌資料
+                    if db_manager and db_manager.is_connected() and batch_id and result.data:
+                        db_manager.insert_records(batch_id, city_name, district_name, result.data)
                         db_manager.insert_district_result(
-                            batch_id, area_code, district_name,
+                            batch_id, city_name, area_code, district_name,
                             result.total_count, "success" if result.total_count > 0 else "no_data" 
-                        )# 寫入行政區查詢結果
+                        )
                 else:
                     logger.error(f"{district_name} 查詢失敗: {result.error_message}")
                     district_results[district_name] = -1  # -1 表示查詢失敗
                     
                     # 記錄失敗狀態
-                    if db_manager and batch_id:
+                    if db_manager and db_manager.is_connected() and batch_id:
                         db_manager.insert_district_result(
-                            batch_id, area_code, district_name,
+                            batch_id, city_name, area_code, district_name,
                             0, "failed", result.error_message
                         )
             
@@ -834,11 +827,6 @@ class HouseholdCrawler:
             time.sleep(0.5)
         
         total_count = sum(v for v in district_results.values() if v > 0)
-        
-        # 更新資料庫批次狀態
-        if db_manager and batch_id:
-            db_manager.update_batch_status(batch_id, "completed", total_count)
-            logger.info(f"資料庫批次 {batch_id} 已完成")
         
         logger.info("=" * 60)
         logger.info("批量查詢完成")

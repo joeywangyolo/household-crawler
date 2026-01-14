@@ -8,7 +8,6 @@
 3. 支援連線池和自動重連
 """
 import os
-import uuid
 import json
 import logging
 from datetime import datetime
@@ -80,8 +79,7 @@ class DatabaseManager:
     使用方式:
         db = DatabaseManager()
         if db.connect():
-            batch_id = db.create_query_batch(...)
-            db.insert_records(batch_id, records)
+            db.insert_records(city, district, records)
             db.close()
     """
     
@@ -163,100 +161,12 @@ class DatabaseManager:
             cursor.close()
     
     # ============================================================
-    # 查詢批次操作
-    # ============================================================
-    def create_query_batch(
-        self,
-        city_code: str,
-        city_name: str,
-        start_date: str,
-        end_date: str,
-        register_kind: str,
-        total_districts: int = 0
-    ) -> Optional[int]:
-        """
-        建立新的查詢批次記錄
-        
-        參數:
-            city_code: 城市代碼
-            city_name: 城市名稱
-            start_date: 查詢起始日期
-            end_date: 查詢結束日期
-            register_kind: 編釘類別
-            total_districts: 查詢的行政區數量
-        
-        回傳:
-            批次 ID，失敗時回傳 None
-        """
-        batch_uuid = str(uuid.uuid4())
-        
-        sql = """
-            INSERT INTO query_batches 
-            (batch_uuid, city_code, city_name, start_date, end_date, 
-             register_kind, total_districts, status, query_started_at)
-            VALUES (%s, %s, %s, %s, %s, %s, %s, 'running', NOW())
-        """
-        
-        try:
-            with self.cursor() as cursor:
-                cursor.execute(sql, (
-                    batch_uuid, city_code, city_name, start_date, end_date,
-                    register_kind, total_districts
-                ))
-                batch_id = cursor.lastrowid
-                logger.info(f"建立查詢批次: ID={batch_id}, UUID={batch_uuid}")
-                return batch_id
-        except Exception as e:
-            logger.error(f"建立查詢批次失敗: {e}")
-            return None
-    
-    def update_batch_status(
-        self,
-        batch_id: int,
-        status: str,
-        total_records: int = None,
-        error_message: str = None
-    ):
-        """
-        更新查詢批次狀態
-        
-        參數:
-            batch_id: 批次 ID
-            status: 狀態 (running/completed/failed)
-            total_records: 總筆數
-            error_message: 錯誤訊息
-        """
-        updates = ["status = %s"]
-        params = [status]
-        
-        if status in ('completed', 'failed'):
-            updates.append("query_finished_at = NOW()")
-        
-        if total_records is not None:
-            updates.append("total_records = %s")
-            params.append(total_records)
-        
-        if error_message:
-            updates.append("error_message = %s")
-            params.append(error_message)
-        
-        params.append(batch_id)
-        
-        sql = f"UPDATE query_batches SET {', '.join(updates)} WHERE id = %s"
-        
-        try:
-            with self.cursor() as cursor:
-                cursor.execute(sql, params)
-                logger.info(f"更新批次 {batch_id} 狀態: {status}")
-        except Exception as e:
-            logger.error(f"更新批次狀態失敗: {e}")
-    
-    # ============================================================
     # 行政區查詢結果操作
     # ============================================================
     def insert_district_result(
         self,
         batch_id: int,
+        city_name: str,
         district_code: str,
         district_name: str,
         record_count: int,
@@ -268,6 +178,7 @@ class DatabaseManager:
         
         參數:
             batch_id: 批次 ID
+            city_name: 城市名稱
             district_code: 行政區代碼
             district_name: 行政區名稱
             record_count: 查詢到的筆數
@@ -276,14 +187,14 @@ class DatabaseManager:
         """
         sql = """
             INSERT INTO district_query_results
-            (batch_id, district_code, district_name, record_count, status, error_message, queried_at)
-            VALUES (%s, %s, %s, %s, %s, %s, NOW())
+            (batch_id, city_name, district_code, district_name, record_count, status, error_message, queried_at)
+            VALUES (%s, %s, %s, %s, %s, %s, %s, NOW())
         """
         
         try:
             with self.cursor() as cursor:
                 cursor.execute(sql, (
-                    batch_id, district_code, district_name, 
+                    batch_id, city_name, district_code, district_name, 
                     record_count, status, error_message
                 ))
         except Exception as e:
@@ -346,48 +257,63 @@ class DatabaseManager:
         return inserted
     
     # ============================================================
+    # 爬蟲 Log 操作
+    # ============================================================
+    def start_log(self, api_endpoint: str) -> Optional[int]:
+        """
+        開始記錄一次 API 呼叫
+        
+        參數:
+            api_endpoint: API 端點名稱
+        
+        回傳:
+            log_id，失敗時回傳 None
+        """
+        sql = """
+            INSERT INTO crawler_logs (api_endpoint, start_time, status)
+            VALUES (%s, NOW(), 'running')
+        """
+        try:
+            with self.cursor() as cursor:
+                cursor.execute(sql, (api_endpoint,))
+                log_id = cursor.lastrowid
+                logger.info(f"開始記錄: log_id={log_id}, endpoint={api_endpoint}")
+                return log_id
+        except Exception as e:
+            logger.error(f"建立 log 失敗: {e}")
+            return None
+    
+    def end_log(
+        self,
+        log_id: int,
+        records_fetched: int = 0,
+        status: str = "completed",
+        error_message: str = None
+    ):
+        """
+        結束一次 API 呼叫記錄
+        
+        參數:
+            log_id: log ID
+            records_fetched: 擷取的記錄數
+            status: 狀態 (completed/failed)
+            error_message: 錯誤訊息
+        """
+        sql = """
+            UPDATE crawler_logs 
+            SET end_time = NOW(), records_fetched = %s, status = %s, error_message = %s
+            WHERE id = %s
+        """
+        try:
+            with self.cursor() as cursor:
+                cursor.execute(sql, (records_fetched, status, error_message, log_id))
+                logger.info(f"結束記錄: log_id={log_id}, status={status}")
+        except Exception as e:
+            logger.error(f"更新 log 失敗: {e}")
+    
+    # ============================================================
     # 查詢方法（給 API 使用）
     # ============================================================
-    def get_recent_batches(self, limit: int = 20) -> List[Dict]:
-        """取得最近的查詢批次"""
-        sql = """
-            SELECT * FROM v_batch_summary
-            LIMIT %s
-        """
-        try:
-            with self.cursor() as cursor:
-                cursor.execute(sql, (limit,))
-                return cursor.fetchall()
-        except Exception as e:
-            logger.error(f"查詢批次失敗: {e}")
-            return []
-    
-    def get_batch_records(self, batch_id: int) -> List[Dict]:
-        """取得特定批次的所有記錄"""
-        sql = """
-            SELECT * FROM household_records
-            WHERE batch_id = %s
-            ORDER BY district, id
-        """
-        try:
-            with self.cursor() as cursor:
-                cursor.execute(sql, (batch_id,))
-                return cursor.fetchall()
-        except Exception as e:
-            logger.error(f"查詢記錄失敗: {e}")
-            return []
-    
-    def get_district_statistics(self) -> List[Dict]:
-        """取得各區統計資料"""
-        sql = "SELECT * FROM v_district_statistics"
-        try:
-            with self.cursor() as cursor:
-                cursor.execute(sql)
-                return cursor.fetchall()
-        except Exception as e:
-            logger.error(f"查詢統計失敗: {e}")
-            return []
-    
     def search_records(
         self,
         city: str = None,
@@ -431,11 +357,9 @@ class DatabaseManager:
         params.append(limit)
         
         sql = f"""
-            SELECT hr.*, qb.query_started_at as batch_query_time
-            FROM household_records hr
-            LEFT JOIN query_batches qb ON hr.batch_id = qb.id
+            SELECT * FROM household_records
             WHERE {where_clause}
-            ORDER BY hr.created_at DESC
+            ORDER BY created_at DESC
             LIMIT %s
         """
         

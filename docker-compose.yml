@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # MySQL 資料庫
   mysql:
@@ -23,6 +21,30 @@ services:
       retries: 5
     networks:
       - household-network
+
+  # FastAPI 爬蟲 API 服務
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: household-api
+    restart: unless-stopped
+    environment:
+      - DB_HOST=mysql
+      - DB_PORT=3306
+      - DB_USER=root
+      - DB_PASSWORD=${MYSQL_PASSWORD:-household123}
+      - DB_NAME=household_db
+    ports:
+      - "8000:8000"
+    depends_on:
+      mysql:
+        condition: service_healthy
+    networks:
+      - household-network
+    volumes:
+      - ./logs:/app/logs
+      - ./output:/app/output
 
   # phpMyAdmin - MySQL 網頁管理介面
   phpmyadmin:
