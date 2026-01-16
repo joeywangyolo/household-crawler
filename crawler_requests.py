@@ -623,7 +623,7 @@ class HouseholdCrawler:
         
         for attempt in range(1, max_retry + 1):
             # 取得驗證碼 (返回 tuple: captcha_string, is_ocr)
-            captcha_input, _ = self.get_valid_captcha_with_retry(max_retry=3)
+            captcha_input, _ = self.get_valid_captcha_with_retry(max_retry=3) #重複取得次上線次數
             
             if not captcha_input:
                 logger.error("無法取得驗證碼")
@@ -928,12 +928,17 @@ def main(save_to_db: bool = True, save_to_csv: bool = True):
     
     # 嘗試連線資料庫
     db_manager = None
+    batch_id = None
     if save_to_db and DB_AVAILABLE:
         print("\n[資料庫] 嘗試連線...")
         try:
             db_manager = DatabaseManager()
             if db_manager.connect():
                 print("[資料庫] 連線成功，資料將存入 MySQL")
+                # 建立 log 記錄，取得 batch_id
+                batch_id = db_manager.start_log("main()")
+                if batch_id:
+                    print(f"[資料庫] 建立批次記錄，batch_id: {batch_id}")
             else:
                 print("[資料庫] 連線失敗，將只輸出 CSV")
                 db_manager = None
@@ -972,82 +977,37 @@ def main(save_to_db: bool = True, save_to_csv: bool = True):
             end_date=end_date,
             register_kind=register_kind,
             db_manager=db_manager,
-            city_name="台北市"
+            city_name="台北市",
+            batch_id=batch_id
         )
         
         if result.success:
             print(f"\n[查詢完成] 總共找到 {result.total_count} 筆資料")
             
             # 輸出 CSV
-            if save_to_csv and result.all_data:
+            if result.all_data:
                 csv_file = export_to_csv(result.all_data)
                 print(f"\n[CSV 輸出] {csv_file}")
+            else:
+                print("\n[提示] 沒有資料，不產生 CSV")
             
             # 資料庫存儲狀態
             if db_manager:
                 print(f"[MySQL 存儲] 資料已存入資料庫")
-            
-            if not result.all_data:
-                print("\n[提示] 沒有資料")
         else:
             print(f"\n[查詢失敗] {result.error_message}")
+        
+        # 更新 log 狀態
+        if db_manager and batch_id:
+            status = "completed" if result.success else "failed"
+            db_manager.end_log(batch_id, result.total_count, status, result.error_message)
+            print(f"[資料庫] 批次記錄已更新，狀態: {status}")
             
     finally:
         # 關閉資料庫連線
         if db_manager:
             db_manager.close()
             print("\n[資料庫] 連線已關閉")
-
-
-# ============================================================
-# 單一行政區查詢 (保留給之後 API 化使用)
-# ============================================================
-def query_single_district(
-    district_name: str = "中正區",
-    start_date: str = "114-09-01",
-    end_date: str = "114-11-30",
-    register_kind: str = "1"
-):
-    """
-    查詢單一行政區的資料
-    
-    這個函數之後可以包裝成 API endpoint
-    """
-    print("=" * 60)
-    print(f"查詢 {district_name} 門牌資料")
-    print("=" * 60)
-    
-    crawler = HouseholdCrawler(use_ocr=True)
-    
-    if not crawler.init_session("63000000"):
-        print("初始化失敗")
-        return None
-    
-    # 取得行政區代碼
-    area_code = crawler.TAIPEI_DISTRICTS.get(district_name)
-    if not area_code:
-        print(f"找不到 {district_name} 的代碼")
-        return None
-    
-    # 使用帶重試的查詢
-    result = crawler.query_with_captcha_retry(
-        area_code=area_code,
-        start_date=start_date,
-        end_date=end_date,
-        register_kind=register_kind
-    )
-    
-    if result.success:
-        print(f"\n找到 {result.total_count} 筆資料")
-        for i, row in enumerate(result.data[:10], 1):
-            print(f"  {i}. {row['address']}")
-        
-        if result.total_count > 10:
-            print(f"  ... 還有 {result.total_count - 10} 筆")
-    else:
-        print(f"\n查詢失敗: {result.error_message}")
-    
-    return result
 
 
 if __name__ == "__main__":

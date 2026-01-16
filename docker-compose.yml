@@ -9,6 +9,8 @@ services:
       MYSQL_DATABASE: household_db
       MYSQL_CHARSET: utf8mb4
       MYSQL_COLLATION: utf8mb4_unicode_ci
+      TZ: Asia/Taipei
+    command: --default-time-zone='+08:00'
     ports:
       - "3306:3306"
     volumes:
@@ -35,6 +37,12 @@ services:
       - DB_USER=root
       - DB_PASSWORD=${MYSQL_PASSWORD:-household123}
       - DB_NAME=household_db
+      - TZ=Asia/Taipei
+      # 排程設定
+      - ENABLE_SCHEDULER=true
+      - SCHEDULE_MODE=cron
+      - SCHEDULE_HOUR=17
+      - SCHEDULE_MINUTE=17
     ports:
       - "8000:8000"
     depends_on:

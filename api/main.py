@@ -12,11 +12,21 @@ API 文件:
 import sys
 import os
 import time
+import logging
 from datetime import datetime
 from typing import Optional, List
 
 from fastapi import FastAPI, HTTPException, Query
 from fastapi.middleware.cors import CORSMiddleware
+
+# APScheduler
+from apscheduler.schedulers.background import BackgroundScheduler
+from apscheduler.triggers.cron import CronTrigger
+from apscheduler.triggers.interval import IntervalTrigger
+
+# 排程器 logger
+scheduler_logger = logging.getLogger("scheduler")
+scheduler_logger.setLevel(logging.INFO)
 
 # 加入專案根目錄到 path
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
@@ -24,13 +34,11 @@ sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 from api.schemas import (
     BatchQueryRequest,
     BatchQueryResponse,
-    DistrictQueryRequest,
-    DistrictQueryResponse,
     HealthResponse,
     ErrorResponse,
     HouseholdRecord
 )
-from crawler_requests import HouseholdCrawler
+from crawler_requests import HouseholdCrawler, main as crawler_main
 
 # 嘗試載入資料庫模組
 try:
@@ -38,6 +46,49 @@ try:
     DB_AVAILABLE = True
 except ImportError:
     DB_AVAILABLE = False
+
+# ============================================================
+# 排程設定
+# ============================================================
+
+# 環境變數控制排程開關（上雲時可設為 false）
+ENABLE_SCHEDULER = os.getenv("ENABLE_SCHEDULER", "true").lower() == "true"
+
+# 排程模式：cron（固定時間）或 interval（間隔執行）
+SCHEDULE_MODE = os.getenv("SCHEDULE_MODE", "cron")
+
+# cron 模式設定（預設每天早上 9:00）
+SCHEDULE_HOUR = os.getenv("SCHEDULE_HOUR", "9")  # 可設 "*" 表示每小時
+SCHEDULE_MINUTE = os.getenv("SCHEDULE_MINUTE", "0")
+
+# interval 模式設定（預設每 1 小時）
+SCHEDULE_INTERVAL_HOURS = int(os.getenv("SCHEDULE_INTERVAL_HOURS", "1"))
+
+# 查詢條件設定
+SCHEDULE_START_DATE = os.getenv("SCHEDULE_START_DATE", "114-09-01")
+SCHEDULE_END_DATE = os.getenv("SCHEDULE_END_DATE", "114-11-30")
+SCHEDULE_REGISTER_KIND = os.getenv("SCHEDULE_REGISTER_KIND", "1")
+
+# 建立排程器
+scheduler = BackgroundScheduler(timezone="Asia/Taipei")
+
+
+def scheduled_crawl_job():
+    """
+    排程執行的爬蟲任務
+    直接呼叫 crawler_requests.py 的 main() 函數
+    """
+    scheduler_logger.info("=" * 60)
+    scheduler_logger.info(f"[排程任務] 開始執行 - {datetime.now()}")
+    scheduler_logger.info("=" * 60)
+    
+    try:
+        # 直接呼叫 crawler_requests.py 的 main() 函數
+        crawler_main()
+        scheduler_logger.info("[排程任務] 執行完成")
+    except Exception as e:
+        scheduler_logger.error(f"[排程任務] 執行錯誤: {e}")
+
 
 # ============================================================
 # FastAPI 應用程式
@@ -73,6 +124,52 @@ app.add_middleware(
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+
+# ============================================================
+# 排程器生命週期
+# ============================================================
+
+@app.on_event("startup")
+def start_scheduler():
+    """FastAPI 啟動時啟動排程器"""
+    if ENABLE_SCHEDULER:
+        if SCHEDULE_MODE == "interval":
+            # 間隔模式：每 N 小時執行一次
+            scheduler.add_job(
+                scheduled_crawl_job,
+                IntervalTrigger(hours=SCHEDULE_INTERVAL_HOURS),
+                id="interval_crawl",
+                name=f"間隔爬蟲任務（每 {SCHEDULE_INTERVAL_HOURS} 小時）",
+                replace_existing=True
+            )
+            scheduler.start()
+            scheduler_logger.info(f"[排程器] 已啟動（間隔模式），每 {SCHEDULE_INTERVAL_HOURS} 小時執行一次")
+        else:
+            # cron 模式：固定時間執行（預設）
+            # SCHEDULE_HOUR 可設為 "*" 表示每小時整點
+            hour_val = None if SCHEDULE_HOUR == "*" else int(SCHEDULE_HOUR)
+            minute_val = int(SCHEDULE_MINUTE)
+            scheduler.add_job(
+                scheduled_crawl_job,
+                CronTrigger(hour=hour_val, minute=minute_val),
+                id="cron_crawl",
+                name="定時爬蟲任務",
+                replace_existing=True
+            )
+            scheduler.start()
+            hour_display = "每小時" if SCHEDULE_HOUR == "*" else f"{int(SCHEDULE_HOUR):02d}"
+            scheduler_logger.info(f"[排程器] 已啟動（cron模式），執行時間: {hour_display}:{minute_val:02d}")
+    else:
+        scheduler_logger.info("[排程器] 已停用（ENABLE_SCHEDULER=false）")
+
+
+@app.on_event("shutdown")
+def shutdown_scheduler():
+    """FastAPI 關閉時關閉排程器"""
+    if scheduler.running:
+        scheduler.shutdown()
+        scheduler_logger.info("[排程器] 已關閉")
 
 
 # ============================================================
@@ -238,80 +335,6 @@ def batch_query(request: BatchQueryRequest):
 
 
 # ============================================================
-# 單一行政區查詢
-# ============================================================
-
-@app.post(
-    "/api/v1/query/district",
-    response_model=DistrictQueryResponse,
-    responses={
-        200: {"description": "查詢成功"},
-        400: {"model": ErrorResponse, "description": "請求參數錯誤"},
-        500: {"model": ErrorResponse, "description": "伺服器錯誤"}
-    },
-    tags=["查詢"],
-    summary="查詢單一行政區"
-)
-def district_query(request: DistrictQueryRequest):
-    """
-    查詢單一行政區的門牌資料
-    
-    - **district_name**: 行政區名稱 (例如: 松山區)
-    - **start_date**: 起始日期
-    - **end_date**: 結束日期
-    """
-    start_time = time.time()
-    
-    try:
-        crawler = HouseholdCrawler(use_ocr=True)
-        
-        if not crawler.init_session():
-            raise HTTPException(status_code=500, detail="無法初始化爬蟲 session")
-        
-        # 取得行政區代碼
-        area_code = crawler.TAIPEI_DISTRICTS.get(request.district_name)
-        if not area_code:
-            raise HTTPException(
-                status_code=400,
-                detail=f"找不到行政區: {request.district_name}"
-            )
-        
-        # 使用帶驗證碼重試的查詢
-        result = crawler.query_with_captcha_retry(
-            area_code=area_code,
-            start_date=request.start_date,
-            end_date=request.end_date,
-            register_kind=request.register_kind
-        )
-        
-        execution_time = time.time() - start_time
-        
-        records = [
-            HouseholdRecord(
-                address=item.get("address", ""),
-                date=item.get("date", ""),
-                type=item.get("type", ""),
-                district=request.district_name
-            )
-            for item in result.data
-        ] if result.data else []
-        
-        return DistrictQueryResponse(
-            success=result.success,
-            district_name=request.district_name,
-            total_count=result.total_count,
-            data=records,
-            execution_time=round(execution_time, 2),
-            error_message=result.error_message if not result.success else None
-        )
-        
-    except HTTPException:
-        raise
-    except Exception as e:
-        raise HTTPException(status_code=500, detail=str(e))
-
-
-# ============================================================
 # 取得支援的行政區列表
 # ============================================================
 
@@ -332,25 +355,63 @@ def get_districts():
 
 
 # ============================================================
-# 取得編釘類別列表
+# 排程管理 API
 # ============================================================
 
 @app.get(
-    "/api/v1/register-kinds",
-    tags=["資訊"],
-    summary="取得編釘類別列表"
+    "/api/v1/scheduler/status",
+    tags=["排程"],
+    summary="查看排程狀態"
 )
-def get_register_kinds():
+def get_scheduler_status():
     """
-    取得所有支援的編釘類別
+    查看排程器狀態和下次執行時間
     """
+    jobs = []
+    if scheduler.running:
+        for job in scheduler.get_jobs():
+            jobs.append({
+                "id": job.id,
+                "name": job.name,
+                "next_run_time": str(job.next_run_time) if job.next_run_time else None
+            })
+    
     return {
-        "register_kinds": {
-            "1": "門牌初編",
-            "2": "門牌改編",
-            "3": "門牌廢止",
-            "4": "門牌復用"
+        "enabled": ENABLE_SCHEDULER,
+        "running": scheduler.running,
+        "schedule_time": f"{SCHEDULE_HOUR}:{SCHEDULE_MINUTE.zfill(2)}",
+        "jobs": jobs,
+        "config": {
+            "start_date": SCHEDULE_START_DATE,
+            "end_date": SCHEDULE_END_DATE,
+            "register_kind": SCHEDULE_REGISTER_KIND
         }
+    }
+
+
+@app.post(
+    "/api/v1/scheduler/trigger",
+    tags=["排程"],
+    summary="手動觸發排程任務"
+)
+def trigger_scheduler():
+    """
+    手動觸發一次排程任務（用於測試）
+    """
+    if not ENABLE_SCHEDULER:
+        raise HTTPException(status_code=400, detail="排程器未啟用")
+    
+    # 立即執行一次
+    scheduler.add_job(
+        scheduled_crawl_job,
+        'date',  # 立即執行
+        id="manual_trigger",
+        replace_existing=True
+    )
+    
+    return {
+        "message": "排程任務已觸發",
+        "triggered_at": datetime.now().isoformat()
     }
 
 
@@ -367,7 +428,8 @@ def root():
         "name": "戶政門牌資料爬蟲 API",
         "version": "1.0.0",
         "docs": "/docs",
-        "health": "/api/v1/health"
+        "health": "/api/v1/health",
+        "scheduler": "/api/v1/scheduler/status"
     }
 
 
